@@ -53,14 +53,19 @@ function createWindow() {
     });
 }
 
+ipcMain.on('msg', (event, data) => {
+    console.log("=>(main.js:57) event", event);
+    console.log("=>(main.js:57) data", data);
+})
 app.whenReady().then(() => {
+    ipcMain.handle('ping', () => 'ponggg')
+    
     createWindow();
     
     app.on("activate", function () {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
     
-    // Register a global shortcut for capturing copied text
     const copyKey = globalShortcut.register("CmdOrCtrl+C", () => {
         const copiedText = clipboard.readText();
         console.log("=>(main.js:66) copiedText", copiedText);
@@ -68,13 +73,8 @@ app.whenReady().then(() => {
             copiedTextArray.unshift(copiedText);
             console.log("=>(main.js:69) copiedTextArray", copiedTextArray);
             mainWindow.webContents.send("updateCopiedText", copiedTextArray);
+            
         }
-        
-        ipcMain.on("set-title", (event, title) => {
-            const webContents = event.sender;
-            const win = BrowserWindow.fromWebContents(webContents);
-            win.setTitle(title);
-        });
     });
 });
 

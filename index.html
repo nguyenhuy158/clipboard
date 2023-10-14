@@ -1,35 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Clipboard App</title>
+    <meta charset="UTF-8" />
+    <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self'"
+    />
+    <meta
+            http-equiv="X-Content-Security-Policy"
+            content="default-src 'self'; script-src 'self'"
+    />
+    <title>Hello from Electron renderer!</title>
+    
+    <script>
+        const { ipcRenderer } = require("electron");
+        
+        function sentToProcess() {
+            ipcRenderer.send("msg", "Helooooo");
+            alert("hih");
+        }
+    </script>
 </head>
 <body>
-<h1>Copied Text</h1>
-<ul id="copiedTextList"></ul>
+<h1>Hello from Electron renderer!</h1>
+<p>👋</p>
+<p id="info"></p>
+<p id="pong"></p>
 
-<script>
-    const { ipcRenderer } = require("electron");
-    
-    // Function to update the copied text list in the HTML
-    function updateCopiedText(copiedTextArray) {
-        const copiedTextList = document.getElementById("copiedTextList");
-        copiedTextList.innerHTML = "";
-        copiedTextArray.forEach(text => {
-            const listItem = document.createElement("li");
-            listItem.textContent = text;
-            copiedTextList.appendChild(listItem);
-        });
-    }
-    
-    // Listen for updates from the main process
-    ipcRenderer.on("updateCopiedText", (event, copiedTextArray) => {
-        updateCopiedText(copiedTextArray);
-    });
-</script>
-
-Title: <input id="title" />
-<button id="btn" type="button">Set</button>
-<script src="./renderer.js"></script>
+<button onclick="sentToProcess()">click</button>
 </body>
+<script src="./renderer.js"></script>
+
 </html>

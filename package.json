@@ -4,7 +4,8 @@
   "description": "A minimal Electron application",
   "main": "main.js",
   "scripts": {
-    "start": "electron-forge start",
+    "start": "electron .",
+    "startt": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make"
   },
