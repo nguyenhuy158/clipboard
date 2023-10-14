@@ -1,43 +1,88 @@
-// Modules to control application life and create native browser window
-const { app, BrowserWindow } = require('electron')
-const path = require('node:path')
+const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, clipboard } = require("electron");
+const path = require("node:path");
 
-function createWindow () {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
-    }
-  })
+const copiedTextArray = [];
+let mainWindow;
 
-  // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
-
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+function createWindow() {
+    mainWindow = new BrowserWindow({
+        height: 300,
+        width: 300,
+        // maxHeight: 300,
+        // maxWidth: 300,
+        // minHeight: 300,
+        // minWidth: 300,
+        // resizable: false,
+        // hiddenInMissionControl: true,
+        // title: "clipboard by nguyenhuy158",
+        // opacity: 1,
+        // transparent: false,
+        // darkTheme: true,
+        // fullscreen: false,
+        // titleBarStyle: "hidden",
+        // skipTaskbar: true,
+        // alwaysOnTop: true,
+        // center: true,
+        // autoHideMenuBar: true,
+        // show: false,
+        webPreferences: {
+            preload: path.join(__dirname, "preload.js"),
+        },
+        icon: path.join(__dirname, "clipboard.png"),
+    });
+    
+    mainWindow.loadFile("index.html")
+        .then(() => {
+            mainWindow.webContents.send("updateCopiedText", copiedTextArray);
+        });
+    
+    const iconPath = path.join(__dirname, "clipboard.png");
+    let tray = new Tray(iconPath);
+    
+    const contextMenu = Menu.buildFromTemplate([
+        { label: "Show App", click: () => mainWindow.show() },
+        { label: "Quit", click: () => app.quit() },
+    ]);
+    
+    tray.setToolTip("Clipboard app");
+    tray.setContextMenu(contextMenu);
+    
+    mainWindow.on("close", (event) => {
+        event.preventDefault();
+        mainWindow.hide();
+    });
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  createWindow()
+    createWindow();
+    
+    app.on("activate", function () {
+        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+    
+    // Register a global shortcut for capturing copied text
+    const copyKey = globalShortcut.register("CmdOrCtrl+C", () => {
+        const copiedText = clipboard.readText();
+        console.log("=>(main.js:66) copiedText", copiedText);
+        if (copiedText) {
+            copiedTextArray.unshift(copiedText);
+            console.log("=>(main.js:69) copiedTextArray", copiedTextArray);
+            mainWindow.webContents.send("updateCopiedText", copiedTextArray);
+        }
+        
+        ipcMain.on("set-title", (event, title) => {
+            const webContents = event.sender;
+            const win = BrowserWindow.fromWebContents(webContents);
+            win.setTitle(title);
+        });
+    });
+});
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
+app.on("window-all-closed", function () {
+    if (process.platform !== "darwin") app.quit();
+});
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit()
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+// Handle app quitting
+app.on("will-quit", () => {
+    globalShortcut.unregister("CmdOrCtrl+C");
+});
